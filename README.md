@@ -14,7 +14,7 @@ Autores:
 
 # Distribucion del Project Development:
 
-- /Planning -> blabla
-- /Data  -> blabla
-- /Model/Main  -> blabla
-- /Model/Aux  -> blabla
+- /Planning -> Se pretende recoger en el documento todos los pasos necesarios para llevar a cabo el proyecto, asi como el calculo del ROI para verificar cuales son los beneficios que obtendrían la cafetería.
+- /Data  -> DataSet que nos proporciona la cafetería, con los datos en bruto.
+- /Model/Main  -> Se encontraría el código necesario para analizar el DataSet y poder obtener conclusiones acerca de los datos.
+- /Model/Aux  -> Primeros calculos con el DataSet, con los cuales acotamos el intervalo de tiempo en el que nos vamos a centrar y cual es la media de productos vendidos por hora.
