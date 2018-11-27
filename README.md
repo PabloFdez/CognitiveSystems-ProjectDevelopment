@@ -14,7 +14,7 @@ Autores:
 
 # Distribucion del Project Development:
 
-/Planning -> blabla
-/Data  -> blabla
-/Model/Main  -> blabla
-/Model/Aux  -> blabla
+- /Planning -> blabla
+- /Data  -> blabla
+- /Model/Main  -> blabla
+- /Model/Aux  -> blabla
