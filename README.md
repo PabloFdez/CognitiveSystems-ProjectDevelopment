@@ -18,3 +18,9 @@ Autores:
 - /Data  -> DataSet que nos proporciona la cafetería, con los datos en bruto.
 - /Model/Main  -> Se encontraría el código necesario para analizar el DataSet y poder obtener conclusiones acerca de los datos.
 - /Model/Aux  -> Primeros calculos con el DataSet, con los cuales acotamos el intervalo de tiempo en el que nos vamos a centrar y cual es la media de productos vendidos por hora.
+
+# Proyect Development:
+
+En el apartado de Proyectos de GitHub se puede acceder al proyecto (cerrado) donde se reflejan las fases del proyecto explicadas en el Project Planning:
+
+![Proyecto](https://github.com/rober12/CognitiveSystems-ProjectDevelopment/blob/master/Model/Aux/closed.png)
