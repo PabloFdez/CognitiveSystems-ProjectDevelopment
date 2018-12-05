@@ -1,1 +1,246 @@
+---
+title: "PROJECT DEVELOPMENT"
+author: Pablo Fernandez Diaz, Roberto Garcia Alvarez
+date: "21 - NOV - 2018"
+output:
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Cargar Librerias:
+```{r librerias, message=FALSE}
+library(readr)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(arules)
+```
+
+# Cargamos el dataset:
+```{r cargar}
+baskets <- read_csv("~/Desktop/BreadBasket_DMS.csv")
+View(baskets)
+head(baskets)
+```
+
+# Análisis previo de los datos:
+Limpieza de datos. Ajuste de hora y fecha.
+```
+# Media beneficios al mes:
+#   (21293*2)/6
+# [1] 7097.667
+
+baskets$Time <- as.POSIXct(baskets$Time,format="%H:%M:%S")
+baskets$hour <- as.numeric(strftime(baskets$Time, format="%H"))
+baskets[, c("Date", "Time")] <- NULL
+```
+Agrupacion por transaccion.
+```
+perTransaction <- aggregate(baskets$Item, list(baskets$Transaction),length)
+hist(baskets$Time,breaks="hours")
+hist(baskets$hour)
+```
+Creacion de grupo de desayuno.
+```
+breakfast <- baskets[baskets$hour>=7 & baskets$hour <=12,]
+breakfast[, c("Date", "Time")] <- NULL
+breakfast <- breakfast[breakfast$Item !="NCN", ]
+```
+TOP 10 Productos mas vendidos en el desayuno.
+```
+sort(table(breakfast$Item),decreasing=TRUE)[1:10]
+```
+5 horas del DESAYUNO que mas productos se venden.
+```
+sort(table(breakfast$hour),decreasing=TRUE)[1:5]
+```
+TOP 10 Productos mas vendidos.
+```
+sort(table(baskets$Item),decreasing=TRUE)[1:10]
+```
+5 horas del DÍA que mas productos se venden.
+```
+sort(table(baskets$hour),decreasing=TRUE)[1:5]
+```
+Muestra:
+[30-OCT-16]    [31-OCT-16]    [1-NOV-16]       [2-NOV-16]     [3-NOV-16]    [4-NOV-16]     [5-NOV-16]   
+  DOMINGO         LUNES         MARTES          MIERCOLES        JUEVES        VIERNES        SABADO  
+
+Agrupacion dias de la semana.
+```
+weekDays <- baskets
+weekDays[, c("Item", "Time")] <- NULL  
+View(weekDays)
+```
+Filtramos el numero de Pedidos diarios entre los dias de una semana
+```
+weekDays %>% filter(between(Date, ymd("2016-10-30"), ymd("2016-11-5")))
+```
+Buscamos el numero maximo de pedidos por día
+```
+weekSales <-weekDays %>%  filter(between(Date, ymd("2016-10-30"), ymd("2016-10-31")))
+View(weekSales)
+```
+Resultados medios por días.
+```
+DOMINGO=filter(weekDays, Date=="2016-10-30")
+count(DOMINGO) # Domingo = 180
+
+LUNES=filter(weekDays, Date=="2016-10-31")
+count(LUNES) # Lunes = 205
+
+MARTES=filter(weekDays, Date=="2016-11-1")
+count(MARTES) # Martes = 154
+
+MIERCOLES=filter(weekDays, Date=="2016-11-2")
+count(MIERCOLES) # Miercoles = 169
+
+JUEVES=filter(weekDays, Date=="2016-11-3")
+count(JUEVES) # Jueves = 195
+
+VIERNES=filter(weekDays, Date=="2016-11-4")
+count(VIERNES) # Viernes = 192
+
+SABADO=filter(weekDays, Date=="2016-11-5")
+count(SABADO) # Sabado = 283
+
+print(sort(table(baskets$Item),decreasing=TRUE))
+```
+Ocurrencias de los articulos en el periodo del desayuno.
+```
+with(breakfast, table(Item)) 
+```
+Ocurrencias de los articulos totales.
+```
+with(baskets, table(Item)) 
+```
+Top 10 de los productos mas comunes en el desayuno.
+```
+ocur <- sort(with(breakfast, table(Item)),decreasing=TRUE)[1:10]
+View(ocur)
+```
+Top 10 de los productos mas comunes totales.
+```
+ocurTot <- sort(with(baskets, table(Item)) ,decreasing=TRUE)[1:10]
+View(ocurTot)
+```
+Listas de nombres de los productos mas vendidos (Top10).
+```
+nom <- names(ocur)
+nomTot <- names(ocurTot)
+```
+
+# ALGORITMO APRIORI:
+
+Algoritmo Iterativo:
+```
+ItemsCountFirstX <- function(x){
+  xMostSoldItems <- sort(table(baskets$Item),decreasing=TRUE)[1:x]
+  print(xMostSoldItems)
+  listOfNames <- names(xMostSoldItems)
+  aprioriTab <- subset(baskets, baskets$Item == listOfNames[1])
+  firstIteration = FALSE
+  for (i in listOfNames) {
+    if (firstIteration == FALSE){
+      firstIteration = TRUE
+      next
+    }
+    aprioriTab <- rbind(aprioriTab,subset(baskets, baskets$Item == i))
+  }
+``` 
+
+Representación gráfica:
+```
+  ggplot(aprioriTab,aes(aprioriTab$Item)) + 
+    geom_bar(width=0.7, fill="steelblue") + 
+    theme(axis.text.x = 
+            element_text(size  = 10,angle = 45,
+                         hjust = 1,vjust = 1)) +
+    xlab("Items") + ylab("Count") + 
+    labs(x="", y="")
+}
+```
+
+Ejecución del algoritmo:
+```
+ItemsCountFirstX(10)
+```
+# ANÁLISIS ASOCIATIVO:
+
+```
+#frequentItems <- eclat (baskets, parameter = list(supp = 0.07, maxlen = 15))
+#print(data(Groceries))
+
+#step 1
+head(baskets)
+#check both transaction and item are factors
+class(baskets$Transaction)
+class(baskets$Item)
+baskets$Transaction <- as.factor(baskets$Transaction)
+class(baskets$Transaction)
+
+#step 2
+isolate vectors
+transact <- subset(baskets$Transaction, baskets$Transaction != 'Other')
+item <- subset(baskets$Item, baskets$Item != 'Other')
+
+#step3
+#create item list
+transact_by_item <- split(item, transact)
+transact_by_item <- split(baskets$Item, baskets$Transaction)
+class(transact_by_item)
+basket <- as(transact_by_item, "transactions")
+
+# #step4
+basket <- as(transact_by_item, "transactions")
+View(transact_by_item)
+
+inspect(basket[1:20])
+# 
+# #step apply apriori
+soporte <- 30 / dim(basket)[1]
+rules <- apriori(basket,parameter = list(support = soporte,confidence = 0.30,target = "rules"))
+summary(rules)
+a <- inspect(sort(x = rules, decreasing = TRUE, by = "confidence"))
+
+sort(a$count,decreasing=TRUE)[1:12]
+```
+ITEMS MAS VENDIDOS JUNTOS:
+
+518 -> Cake & COFFEE                        
+472 -> Tea & COFFEE 
+450 -> Pastry & COFFEE 
+362 -> Sandwich & COFFEE 
+333 -> Medialuna & COFFEE 
+280 -> Hot chocolate & COFFEE 
+276 -> Pastry & BREAD
+267 -> Cookies & COFFEE 
+224 -> Toast & COFFEE 
+195 -> Juice & COFFEE 
+
+```
+breakfast$Transaction <- as.factor(breakfast$Transaction)
+transact_by_itemB <- split(breakfast$Item, breakfast$Transaction)
+basketB <- as(transact_by_itemB, "transactions")
+rulesB <- apriori(basketB,parameter = list(support = soporte,confidence = 0.30,target = "rules"))
+summary(rulesB)
+aB <- inspect(sort(x = rulesB, decreasing = TRUE, by = "confidence"))
+
+sort(aB$count,decreasing=TRUE)[1:14]
+```
+ITEMS MAS VENDIDOS JUNTOS en el DESAYUNO:
+
+317 -> Pastry & COFFEE
+224 -> Medialuna & COFFEE
+193 -> Pastry & BREAD
+168 -> Tea & COFFEE
+147 -> Toast & COFFEE
+136 -> Cake & COFFEE
+120 -> Medialuna & BREAD
+117 -> Hot chocolate & COFFEE
+117 -> Cookies & COFFEE
+80 -> Muffin & COFFEE
 
